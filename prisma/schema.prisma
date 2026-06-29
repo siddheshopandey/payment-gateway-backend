@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Merchant {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+
+  payments  Payment[]
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  PARTIALLY_REFUNDED
+  REFUNDED
+}
+
+model Payment {
+  id            String        @id @default(cuid())
+  amount        Decimal
+  customerName  String
+  customerEmail String
+  status        PaymentStatus @default(PENDING)
+
+  merchantId    String
+  merchant      Merchant      @relation(fields: [merchantId], references: [id])
+
+  refunds       Refund[]
+
+  createdAt     DateTime      @default(now())
+  notifications Notification[]
+
+}
+
+model Refund {
+  id        String   @id @default(cuid())
+  amount    Decimal
+  reason    String?
+
+  paymentId String
+  payment   Payment  @relation(fields: [paymentId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+model Notification {
+  id         String   @id @default(cuid())
+
+  paymentId  String
+  payment    Payment  @relation(fields: [paymentId], references: [id])
+
+  status     String
+  success    Boolean
+  attempts   Int      @default(1)
+
+  createdAt  DateTime @default(now())
+}
